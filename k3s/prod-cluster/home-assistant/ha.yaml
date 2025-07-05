@@ -29,9 +29,11 @@ spec:
   ports:
     - name: "8123"
       port: 8123
-      targetPort: 8123
+      nodePort: 8123
+      protocol: TCP
   selector:
     app.k3s.io/name: homeassistant
+  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -54,6 +56,7 @@ spec:
     spec:
       containers:
         - image: ghcr.io/home-assistant/home-assistant:stable
+          imagePullPolicy: Always
           name: homeassistant
           ports:
             - containerPort: 8123
