@@ -1,0 +1,70 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.k3s.io/name: homeassistant
+  name: homeassistant-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant
+spec:
+  ports:
+    - name: "8123"
+      port: 8123
+      targetPort: 8123
+  selector:
+    app.k3s.io/name: homeassistant
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.k3s.io/name: homeassistant
+  name: homeassistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.k3s.io/name: homeassistant
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.k3s.io/name: homeassistant
+    spec:
+      containers:
+        - image: ghcr.io/home-assistant/home-assistant:stable
+          name: homeassistant
+          ports:
+            - containerPort: 8123
+              protocol: TCP
+          securityContext:
+            privileged: true
+          env:
+            - name: TZ
+              value: "America/Chicago"
+          volumeMounts:
+            - mountPath: /etc/localtime
+              name: tz-config
+              readOnly: true
+            - mountPath: /config
+              name: ha-data-volume
+      restartPolicy: Always
+      volumes:
+        - name: tz-config
+          hostPath:
+            path: /usr/share/zoneinfo/America/Chicago
+        - name: ha-data-volume
+          persistentVolumeClaim:
+            claimName: homeassistant-pvc
+        
