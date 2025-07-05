@@ -32,7 +32,7 @@ spec:
       protocol: TCP
   selector:
     app.k3s.io/name: homeassistant
-  type: NodePort
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment
