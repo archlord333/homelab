@@ -29,7 +29,6 @@ spec:
   ports:
     - name: "8123"
       port: 8123
-      nodePort: 8123
       protocol: TCP
   selector:
     app.k3s.io/name: homeassistant
