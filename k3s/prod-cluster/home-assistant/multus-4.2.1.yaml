@@ -1,0 +1,236 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: multus
+  namespace: home-assistant
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-multus-v4.2.104-config
+  namespace: home-assistant
+  labels:
+    tier: node
+    app: rke2-multus
+data:
+  cni-conf.json: |-
+    {"binDir":"/var/lib/rancher/k3s/data/cni/","confDir":"/var/lib/rancher/k3s/agent/etc/cni/net.d","kubeconfig":"/var/lib/rancher/k3s/agent/etc/cni/net.d/multus.d/multus.kubeconfig","multusConfFile":"auto"}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: network-attachment-definitions.k8s.cni.cncf.io
+spec:
+  group: k8s.cni.cncf.io
+  scope: Namespaced
+  names:
+    plural: network-attachment-definitions
+    singular: network-attachment-definition
+    kind: NetworkAttachmentDefinition
+    shortNames:
+    - net-attach-def
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                config:
+                  type: string
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rke2-multus
+rules:
+  - apiGroups: ["k8s.cni.cncf.io"]
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/status
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rke2-multus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rke2-multus
+subjects:
+- kind: ServiceAccount
+  name: multus
+  namespace: home-assistant
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-multus
+  namespace: home-assistant
+  labels:
+    tier: node
+    app: rke2-multus
+spec:
+  selector:
+    matchLabels:
+      app: rke2-multus
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: rke2-multus
+      annotations:
+        checksum/config: 68e2933476e958f7b6c928203904c091267c153a619df10f98355e2b4a918983
+    spec:
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      serviceAccountName: multus
+      initContainers:
+      - name: cni-plugins
+        image: rancher/hardened-cni-plugins:v1.7.1-build20250611
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: cnibin
+          mountPath: /host/opt/cni/bin
+        env:
+        - name: SKIP_CNI_BINARIES
+          value: flannel
+      containers:
+      - name: kube-rke2-multus
+        image: rancher/hardened-multus-cni:v4.2.1-build20250627
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KUBERNETES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        command: ["/thin_entrypoint"]
+        args:
+        - "--multus-conf-file=auto"
+        - "--multus-kubeconfig-file-host=/var/lib/rancher/k3s/agent/etc/cni/net.d/multus.d/multus.kubeconfig"
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+          requests:
+            cpu: 250m
+            memory: 128Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: cni
+          mountPath: /host/etc/cni/net.d
+        - name: cnibin
+          mountPath: /host/opt/cni/bin
+        - name: multus-cfg
+          mountPath: /tmp/multus-conf/00-multus.conf
+          subPath: "cni-conf.json"
+      volumes:
+        - name: cni
+          hostPath:
+            path: /var/lib/rancher/k3s/agent/etc/cni/net.d
+        - name: cnibin
+          hostPath:
+            path: /var/lib/rancher/k3s/data/cni/
+        - name: multus-cfg
+          configMap:
+            name: my-multus-v4.2.104-config
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-multus-dhcp
+  namespace: home-assistant
+  labels:
+    tier: node
+    app: rke2-multus
+spec:
+  selector:
+    matchLabels:
+      app: rke2-multus
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: rke2-multus
+    spec:
+      hostNetwork: true
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      nodeSelector:
+        kubernetes.io/os: linux
+      initContainers:
+      - name: kube-rke2-multus-dhcp-cleanup
+        image: rancher/mirrored-library-busybox:1.36.1
+        command: ["rm", "-f", "/run/cni/dhcp.sock"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: socketpath
+          mountPath: /host/run/cni
+      containers:
+      - name: kube-rke2-multus-dhcp
+        image: rancher/mirrored-library-busybox:1.36.1
+        command: ["/opt/cni/bin/dhcp", "daemon"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: binpath
+          mountPath: /opt/cni/bin
+        - name: socketpath
+          mountPath: /run/cni
+        - name: netnspath
+          mountPath: /var/run/netns
+          mountPropagation: HostToContainer
+      volumes:
+        - name: binpath
+          hostPath:
+            path: /var/lib/rancher/k3s/data/cni/
+        - name: socketpath
+          hostPath:
+            path: /run/cni
+        - name: netnspath
+          hostPath:
+            path: /run/netns
+---
