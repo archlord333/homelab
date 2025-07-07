@@ -52,16 +52,20 @@ spec:
     metadata:
       labels:
         app.k3s.io/name: homeassistant
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "multus-iot",
+            "namespace": "home-assistant",
+            "ips": ["10.1.3.2/24"]
+          }]
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - image: ghcr.io/home-assistant/home-assistant:stable
           imagePullPolicy: Always
           name: homeassistant
           ports:
             - containerPort: 8123
-              hostPort: 8123
               protocol: TCP
           securityContext:
             privileged: true
