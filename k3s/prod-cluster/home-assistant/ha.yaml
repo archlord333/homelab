@@ -54,6 +54,7 @@ spec:
         app.k3s.io/name: homeassistant
     spec:
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - image: ghcr.io/home-assistant/home-assistant:stable
           imagePullPolicy: Always
