@@ -53,7 +53,7 @@ spec:
       labels:
         app.k3s.io/name: homeassistant
       annotations:
-        k8s.v1.cni.cncf.io/networks: '[{ "name" : "macvlan-dhcp-ha", "mac": "8a:8a:b5:ce:04:33" }]'
+        k8s.v1.cni.cncf.io/networks: '[{ "name" : "multus-ha-nad", "mac": "8a:8a:b5:ce:04:33" }]'
     spec:
       containers:
         - image: ghcr.io/home-assistant/home-assistant:stable
