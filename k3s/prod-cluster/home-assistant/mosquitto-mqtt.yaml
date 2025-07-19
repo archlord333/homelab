@@ -4,6 +4,7 @@ metadata:
   name: mosquitto-config
   labels:
     app.k3s.io/name: mosquitto
+  namespace: home-assistant
 data:
   mosquitto.conf: |
 
@@ -21,6 +22,7 @@ metadata:
   name: mosquitto-data
   labels:
     app.k3s.io/name: mosquitto
+  namespace: home-assistant
 spec:
   accessModes:
     - ReadWriteOnce
@@ -34,6 +36,7 @@ metadata:
   name: mosquitto-mqtts
   labels:
     app.k3s.io/name: mosquitto
+  namespace: home-assistant
 spec:
   type: NodePort
   selector:
@@ -48,6 +51,7 @@ metadata:
   name: mosquitto
   labels:
     app.k3s.io/name: mosquitto
+  namespace: home-assistant
 spec:
   replicas: 1
   selector:
