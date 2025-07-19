@@ -39,12 +39,12 @@ metadata:
     app.k3s.io/name: mosquitto
   namespace: home-assistant
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app.k3s.io/name: mosquitto
   ports:
-  - port: 8883
-    nodePort: 30883
+    - port: 8883
+      protocol: TCP
 ---
 apiVersion: apps/v1
 kind: Deployment
