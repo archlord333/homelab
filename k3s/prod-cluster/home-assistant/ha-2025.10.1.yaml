@@ -56,7 +56,7 @@ spec:
         k8s.v1.cni.cncf.io/networks: '[{ "name" : "multus-ha-nad", "mac": "8a:8a:b5:ce:04:33" }]'
     spec:
       containers:
-        - image: ghcr.io/home-assistant/home-assistant:stable
+        - image: ghcr.io/home-assistant/home-assistant:2025.10.1
           imagePullPolicy: Always
           name: homeassistant
           ports:
