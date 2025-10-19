@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.k3s.io/name: matter-server
+  name: matter-server
+  namespace: home-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.k3s.io/name: matter-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.k3s.io/name: matter-server
+    spec:
+      containers:
+        - image: ghcr.io/matter-js/python-matter-server:8.1.1
+          imagePullPolicy: Always
+          name: matter-server 
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /data
+              name: matter-data-volume 
+      restartPolicy: Always
+      volumes:
+        - name: matter-data-volume
+          hostPath:
+            path: /docker/matter-server/data
