@@ -9,11 +9,16 @@ spec:
     {
       "cniVersion": "0.3.1",
       "name": "macvlan-dhcp-ha",
-      "type": "macvlan",
-      "mode": "bridge",
-      "master": "eno1",
-      "ipam": {
-        "type": "dhcp"
-      }
+      "plugins": [
+        {
+          "type": "macvlan",
+          "mode": "bridge",
+          "master": "eno1",
+          "ipam": {
+            "type": "dhcp"
+          }
+        },
+        { "type": "sbr" }
+      ]
     }
 
