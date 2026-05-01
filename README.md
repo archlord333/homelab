@@ -1,5 +1,11 @@
 # Nic's Homelab
 
+## What and Why
+
+### Adguard Home
+
+Why let your Internet usage be drained away by all these DNS queries and data downloads for harvesting your personal data? Adguard is a DNS sinkhole that is able to get rid of those types of ads on all devices on your network.
+
 ## Setup
 
 ### Ubuntu Server
