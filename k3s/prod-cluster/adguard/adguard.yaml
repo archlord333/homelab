@@ -79,8 +79,7 @@ spec:
       protocol: TCP
       port: 53
       targetPort: 53
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  clusterIP: 10.43.100.100
 ---
 apiVersion: apps/v1
 kind: Deployment
