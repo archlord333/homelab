@@ -6,7 +6,7 @@ metadata:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: adguard
+  name: adguard-pvc
   namespace: adguard
 spec:
   accessModes:
@@ -55,5 +55,5 @@ spec:
       volumes:
         - name: adguard-data
           persistentVolumeClaim:
-            claimName: adguard
+            claimName: adguard-pvc
 ---
