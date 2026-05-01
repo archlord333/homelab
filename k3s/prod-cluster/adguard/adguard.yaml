@@ -16,6 +16,76 @@ spec:
     requests:
       storage: 1Gi
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: adguard-config
+  namespace: adguard
+  labels:
+    app: adguard-home
+    app.kubernetes.io/name: adguard
+    app.kubernetes.io/instance: adguard
+data:
+  AdGuardHome.yaml: |
+    bind_host: 0.0.0.0
+    bind_port: 3000
+    beta_bind_port: 0
+    users: []
+    language: "en"
+    theme: "auto"
+    dns:
+      bind_host: 0.0.0.0
+      port: 53
+      protection_enabled: true
+      filtering_enabled: true
+      safebrowsing_enabled: false
+      safesearch_enabled: false
+      querylog_enabled: true
+      ratelimit: 20
+      blocked_response_ttl: 10
+      bootstrap_dns:
+        - 1.1.1.1
+        - 8.8.8.8
+    tls:
+      enabled: false
+    log:
+      file: ""
+      max_backups: 0
+      max_size: 100
+      max_age: 3
+      compress: false
+      local_time: false
+    security:
+      protection_enabled: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard
+  namespace: adguard
+spec:
+  selector:
+    app: adguard
+  ports:
+  - name: web-admin
+    protocol: TCP
+    port: 3000
+    targetPort: 3000
+  - name: web-interface
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
